@@ -5,11 +5,12 @@ import (
 	"time"
 	"math/rand"
 	"strconv"
+	"os"
 )
 
 
 
-func showMessage(messages chan string){
+func showMessage(messages chan string, signals chan bool){
 
 	var buffer []string //Buffer de mensajeria
 
@@ -23,7 +24,14 @@ func showMessage(messages chan string){
 				
 			case <-time.After(8 * time.Second):
 				fmt.Println("\nNo message received for 8 seconds")
-				buffer = buffer[:0]	
+				buffer = buffer[:0]
+				
+			case <-signals:
+			
+				fmt.Println("Received kill signal ...")
+				os.Exit(1)
+				
+					
 		}
 	}
 
@@ -32,15 +40,18 @@ func showMessage(messages chan string){
 
 func main() {
 	messages := make(chan string,5)
+	signals := make(chan bool)
 	
-	go showMessage(messages)
+	go showMessage(messages,signals)
 	
 	//Producer
-	
 	for{
-		r := rand.Intn(10)
-		messages <- strconv.Itoa(r)
-		time.Sleep(time.Duration(r) * time.Second)
-			
+		for i := 0; i < 20; i++ {
+			r := rand.Intn(10)
+			messages <- strconv.Itoa(r)
+			time.Sleep(time.Duration(r) * time.Second)		
+		}
+	
+		signals<-true
 	}
 }
